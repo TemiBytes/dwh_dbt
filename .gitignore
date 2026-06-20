@@ -1,0 +1,14 @@
+# dbt
+target/
+dbt_packages/
+logs/
+
+# python
+__pycache__/
+venv/
+
+# Credentials - never commit these
+profiles.yml
+*.pem
+*.p8
+.env
