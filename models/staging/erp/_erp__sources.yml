@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: erp
+    database: DWH
+    schema: DWH_SCHEMA
+    description: "Raw ERP data loaded via SnowSQL into Snowflake internal stage"
+
+    tables:
+      - name: erp_cust_demographics
+        description: "Customer birthdate and gender from ERP system"
+        columns:
+          - name: cid
+            description: "Customer ID — may have NAS prefix, stripped in staging"
+          - name: bdate
+            description: "Birthdate — future dates exist in raw data, nulled in staging"
+          - name: gen
+            description: "Raw gender values vary (M, Male, F, Female, null) — normalized in staging"
+
+      - name: erp_cust_location
+        description: "Customer country data from ERP system"
+        columns:
+          - name: cid
+            description: "Customer ID — may have NAS prefix, stripped in staging"
+          - name: cntry
+            description: "Raw country codes and names — standardized in staging"
+
+      - name: erp_prd_categories
+        description: "Product category hierarchy from ERP system"
+        columns:
+          - name: id
+            description: "Category ID — joins to cat_id derived from crm_prd_info.prd_key"
+          - name: cat
+          - name: subcat
+          - name: maintenance

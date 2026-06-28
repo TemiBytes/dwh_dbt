@@ -1,0 +1,51 @@
+version: 2
+
+sources:
+  - name: crm
+    database: DWH
+    schema: DWH_SCHEMA
+    description: "Raw CRM data loaded via SnowSQL into Snowflake internal stage"
+
+    tables:
+      - name: crm_cust_info
+        description: "Raw customer master data from CRM system"
+        columns:
+          - name: cst_id
+            description: "Customer ID — raw VARCHAR, cast to INT in staging"
+          - name: cst_key
+            description: "Customer business key used for joins to ERP tables"
+          - name: cst_firstname
+          - name: cst_lastname
+          - name: cst_marital_status
+            description: "Raw values: S, M, or garbage — normalized in staging"
+          - name: cst_gndr
+            description: "Raw values: M, F, or garbage — normalized in staging"
+          - name: cst_create_date
+
+      - name: crm_prd_info
+        description: "Raw product master data from CRM system"
+        columns:
+          - name: prd_id
+          - name: prd_key
+            description: "Product key — first 5 chars encode the category ID"
+          - name: prd_nm
+          - name: prd_cost
+          - name: prd_line
+          - name: prd_start_dt
+          - name: prd_end_dt
+            description: "NULL means current product, non-NULL means historical/retired"
+
+      - name: crm_sales_details
+        description: "Raw sales transaction data from CRM system"
+        columns:
+          - name: sls_ord_num
+          - name: sls_prd_key
+          - name: sls_cust_id
+          - name: sls_order_dt
+            description: "Stored as YYYYMMDD integer string — cast to DATE in staging"
+          - name: sls_ship_dt
+          - name: sls_due_dt
+          - name: sls_sales
+            description: "Can be zero or negative — derived from qty * price in staging"
+          - name: sls_quantity
+          - name: sls_price
