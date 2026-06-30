@@ -11,8 +11,8 @@ cleaned as (
         -- cid must match cst_key in crm_cust_info for the join to work
         case
             when upper(trim(cid)) like 'NAS%'
-            then substr(trim(cid), 4)
-            else trim(cid)
+            then replace(substr(trim(cid), 4), '-', '')
+            else replace(trim(cid), '-', '')
         end                                                 as customer_number,
 
         -- normalise country values — raw data has codes, full names,
