@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: int_customers_enriched
+    description: >
+      Ephemeral model. Joins stg_crm__cust_info, stg_erp__cust_demographics,
+      and stg_erp__cust_location into a single enriched customer record.
+      Resolves gender conflicts (CRM priority, ERP fallback), derives age
+      and age_band. Consumed exclusively by dim_customers.
+
+  - name: int_products_enriched
+    description: >
+      Ephemeral model. Joins stg_crm__prd_info and stg_erp__prd_categories
+      on category_id. Derives cost_tier for segmentation. Consumed
+      exclusively by dim_products.
+
+  - name: int_sales_enriched
+    description: >
+      Ephemeral model. Enriches stg_crm__sales_details with precomputed
+      time grains (order_year, order_month). Consumed by fact_sales.

@@ -6,11 +6,11 @@ cleaned as (
         -- ids
         try_cast(prd_id as int) as product_id,
 
-        --extract category id from the product key 
-        -- prd_key format: 'CO-RF-FR-R92B-58'
-        split_part(prd_key, '-', 1) as category_id,
+        -- categpry id: first 5 characters, replace hyphen with underscore
+        replace(substr(trim(prd_key),1,5), '-', '_') as category_id,
 
-        trim(prd_key) as product_number,
+    
+        substr(trim(prd_key),7) as product_number,
         trim(prd_nm) as product_name,
 
         -- cost: nulls and negatives are bad data, default to 0

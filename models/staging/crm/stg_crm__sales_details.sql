@@ -49,6 +49,7 @@ cleaned as (
         case 
             when try_cast(sls_sales as int) is null 
                 or try_cast(sls_sales as int) <= 0
+                or try_cast(sls_sales as int) != try_cast(sls_quantity as int) * abs(try_cast(sls_price as int))
             then try_cast(sls_quantity as int) * try_cast(sls_price as int)
             else try_cast(sls_sales as int)
         end as sales_amount,
