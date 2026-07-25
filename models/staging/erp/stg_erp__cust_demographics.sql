@@ -7,11 +7,7 @@ cleaned as (
         -- strip the 'NAS' prefix from cid where it exists
         -- result must match cst_key in crm_cust_info for the join to work 
 
-        case 
-            when upper(trim(cid)) like 'NAS%' 
-            THEN replace(substr(trim(cid), 4), '-', '')
-            else replace(trim(cid), '-', '')
-        end as customer_number,
+        {{ clean_erp_customer_id('cid') }} as customer_number,
 
         -- birthdate: future dates are bad data , null them out
         -- a customer cannot be born in the future

@@ -1,0 +1,11 @@
+version: 2 
+
+snapshots:
+    - name: snp_crm_customers
+      relation: ref('stg_crm__cust_info')
+      config:
+        schema: snapshots
+        unique_key: customer_id
+        strategy: check
+        check_cols: ['marital_status', 'gender']
+        dbt_valid_to_current: "to_date('9999-12-31')"
