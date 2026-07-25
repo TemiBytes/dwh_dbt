@@ -1,0 +1,23 @@
+version: 2 
+
+exposures:
+  - name: sales_performance_dashboard
+    label: "Sales Performance Dashboard"
+    type: dashboard
+    maturity: medium 
+    url: https://public.tableau.com/app/profile/temidayo #update with actual dashboard url once deployed
+    description: >
+      Tableau dashboard surfacing sales performance metrics across customers, products,
+      and time. Built on the DWH gold layer: all five mart models feeding revenue tracking,
+      customer analysis, product performance, and monthly sales trends.
+    
+    depends_on:
+      - ref('fact_sales')
+      - ref('dim_customers')
+      - ref('dim_products')
+      - ref('dim_date')
+      - ref('agg_monthly_sales')
+
+    owner:
+      name: Temidayo Akinsemoyin
+      email: temidayoakin.pro@gmail.com
