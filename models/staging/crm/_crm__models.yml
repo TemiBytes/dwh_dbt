@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_crm__cust_info
+    description: "Cleaned and normalised customer master data from CRM"
+    columns:
+      - name: customer_id
+        description: "Primary key — unique integer customer identifier"
+        tests:
+          - unique
+          - not_null
+      - name: customer_number
+        tests:
+          - not_null
+      - name: marital_status
+        tests:
+          - accepted_values:
+              values: ['Single', 'Married', 'n/a']
+      - name: gender
+        tests:
+          - accepted_values:
+              values: ['Male', 'Female', 'n/a']
+
+  - name: stg_crm__prd_info
+    description: "Cleaned product master data with category ID extracted from product key"
+    columns:
+      - name: product_id
+        tests:
+          - unique
+          - not_null
+      - name: product_number
+        tests:
+          - not_null
+      - name: category_id
+        tests:
+          - not_null
+      - name: cost
+        tests:
+          - not_null
+
+  - name: stg_crm__sales_details
+    description: "Cleaned sales transactions with validated financial figures and parsed dates"
+    columns:
+      - name: order_number
+        tests:
+          - not_null
+      - name: customer_id
+        tests:
+          - not_null
+      - name: product_number
+        tests:
+          - not_null
+      - name: sales_amount
+        tests:
+          - not_null
+      - name: quantity
+        tests:
+          - not_null

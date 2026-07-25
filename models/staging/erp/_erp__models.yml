@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: stg_erp__cust_demographics
+    description: "Customer birthdate and normalised gender from ERP — NAS prefix stripped from cid"
+    columns:
+      - name: customer_number
+        tests:
+          - not_null
+
+  - name: stg_erp__cust_location
+    description: "Customer country from ERP — codes standardised to full country names"
+    columns:
+      - name: customer_number
+        tests:
+          - not_null
+      - name: country
+        tests:
+          - not_null
+
+  - name: stg_erp__prd_categories
+    description: "Product category reference table from ERP"
+    columns:
+      - name: category_id
+        tests:
+          - unique
+          - not_null
+      - name: category
+        tests:
+          - not_null
+      - name: subcategory
+        tests:
+          - not_null
