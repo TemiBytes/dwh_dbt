@@ -1,0 +1,66 @@
+name: dbt CD
+ 
+# Triggered automatically on every merge to main (runs incremental build).
+# Can also be triggered manually via workflow_dispatch with an optional
+# full_refresh flag — use this for schema migrations or when an upstream
+# dimension fix requires a full rebuild of fact_sales.
+ 
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full_refresh:
+        description: 'Run dbt build --full-refresh (rebuilds all incremental models from scratch)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+ 
+jobs:
+  dbt-cd:
+    runs-on: ubuntu-latest
+    environment: DBT_DWH
+ 
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+ 
+      - name: Install dbt
+        run: |
+          pip install --upgrade pip
+          pip install dbt-core==1.9.4 dbt-snowflake==1.9.4
+ 
+      - name: Write profiles.yml and RSA private key
+        run: |
+          mkdir -p ~/.dbt
+          echo "${{ secrets.DBT_PROFILES_YML }}" > ~/.dbt/profiles.yml
+          echo "${{ secrets.DBT_PRIVATE_KEY }}"  > ~/.dbt/rsa_key
+          chmod 600 ~/.dbt/rsa_key
+ 
+      - name: Install dbt packages
+        run: dbt deps
+ 
+      - name: Verify Snowflake connection
+        run: dbt debug --target prod
+ 
+      - name: dbt build — incremental (normal merge)
+        if: ${{ github.event_name == 'push' || inputs.full_refresh == 'false' }}
+        # Regular CD: only processes new rows in fact_sales (incremental merge).
+        # This is the default path for every PR merged into main.
+        run: dbt build --target prod
+ 
+      - name: dbt build — full refresh (manual trigger only)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.full_refresh == 'true' }}
+        # Manual path: drops and rebuilds all incremental models from scratch.
+        # Use when: upstream dimension fix needs backfilling, schema migration,
+        # or after a failed prod run left the table in a bad state.
+        run: dbt build --target prod --full-refresh
+ 

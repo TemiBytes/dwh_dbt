@@ -1,0 +1,91 @@
+name: dbt CI Cleanup
+ 
+# Runs when any PR targeting main is closed — whether merged or rejected.
+# Drops the isolated CI_PR_<number>_staging and CI_PR_<number>_marts
+# schemas that were created during the CI run, keeping Snowflake clean.
+ 
+on:
+  pull_request:
+    branches: [main]
+    types: [closed]
+ 
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: DBT_DWH
+ 
+    steps:
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+ 
+      - name: Install Snowflake connector
+        # NOTE: This job intentionally avoids installing the full dbt stack (saves ~60s).
+      # It hand-rolls RSA auth via snowflake-connector-python directly.
+      # If the key format or auth method ever changes, update both this job
+      # and the profiles.yml secret used by the CI/CD jobs.
+      # snowflake-connector-python is already a transitive dependency of
+        # dbt-snowflake, but we install it directly here to keep this job
+        # lightweight — no need to install the full dbt stack just to drop schemas.
+        run: |
+          pip install --upgrade pip
+          pip install snowflake-connector-python cryptography
+ 
+      - name: Write RSA private key
+        run: |
+          mkdir -p ~/.dbt
+          echo "${{ secrets.DBT_PRIVATE_KEY }}" > ~/.dbt/rsa_key
+          chmod 600 ~/.dbt/rsa_key
+ 
+      - name: Drop CI schemas
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+        run: |
+          python3 << 'PYEOF'
+          import os
+          import snowflake.connector
+          from cryptography.hazmat.primitives import serialization
+          from cryptography.hazmat.backends import default_backend
+ 
+          pr_number = os.environ['PR_NUMBER']
+          account   = os.environ['SNOWFLAKE_ACCOUNT']
+          user      = os.environ['SNOWFLAKE_USER']
+ 
+          # Load RSA private key — same key used by dbt, stored as GitHub Secret.
+          with open('/home/runner/.dbt/rsa_key', 'rb') as f:
+              private_key = serialization.load_pem_private_key(
+                  f.read(), password=None, backend=default_backend()
+              )
+ 
+          pkb = private_key.private_bytes(
+              encoding=serialization.Encoding.DER,
+              format=serialization.PrivateFormat.PKCS8,
+              encryption_algorithm=serialization.NoEncryption()
+          )
+ 
+          conn = snowflake.connector.connect(
+              account=account,
+              user=user,
+              private_key=pkb,
+              role='TRANSFORMER',
+              warehouse='DWH_WH',
+              database='DWH'
+          )
+ 
+          # dbt creates one schema per +schema config entry in dbt_project.yml.
+          # This project defines staging and marts, so two schemas to drop.
+          base = f"CI_PR_{pr_number}"
+          schemas = [f"{base}_staging", f"{base}_marts"]
+ 
+          cur = conn.cursor()
+          for schema in schemas:
+              print(f"Dropping DWH.{schema} ...")
+              cur.execute(f"DROP SCHEMA IF EXISTS DWH.{schema}")
+              print(f"  Done.")
+          cur.close()
+          conn.close()
+          print(f"Cleanup complete for PR #{pr_number}.")
+          PYEOF
