@@ -1,0 +1,56 @@
+name: dbt CI
+ 
+# Runs on every PR opened, updated, or reopened targeting main.
+# Each PR gets its own isolated Snowflake schema: CI_PR_<number>_staging
+# and CI_PR_<number>_marts. This mirrors a real team setup where CI
+# never touches the shared dev or prod schema.
+ 
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+ 
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+    environment: DBT_DWH
+ 
+    env:
+      # Dynamic schema unique to this PR — keeps CI completely isolated.
+      # dbt appends _staging and _marts based on dbt_project.yml +schema config.
+      DBT_SCHEMA: CI_PR_${{ github.event.number }}
+ 
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+ 
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+ 
+      - name: Install dbt
+        run: |
+          pip install --upgrade pip
+          pip install dbt-core==1.9.4 dbt-snowflake==1.9.4
+ 
+      - name: Write profiles.yml and RSA private key
+        # profiles.yml is stored as a GitHub Secret (full file contents).
+        # The key is written separately so the path in profiles.yml resolves
+        # correctly on the runner at /home/runner/.dbt/rsa_key.
+        run: |
+          mkdir -p ~/.dbt
+          echo "${{ secrets.DBT_PROFILES_YML }}" > ~/.dbt/profiles.yml
+          echo "${{ secrets.DBT_PRIVATE_KEY }}"  > ~/.dbt/rsa_key
+          chmod 600 ~/.dbt/rsa_key
+ 
+      - name: Install dbt packages
+        run: dbt deps
+ 
+      - name: Verify Snowflake connection
+        run: dbt debug --target dev
+ 
+      - name: dbt build (models + tests)
+        # dbt build runs all models AND their tests in dependency order.
+        # A test failure here fails the PR — models must be clean before merge.
+        run: dbt build --target dev
