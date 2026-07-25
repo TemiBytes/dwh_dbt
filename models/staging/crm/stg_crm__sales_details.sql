@@ -9,41 +9,15 @@ cleaned as (
         trim(sls_prd_key) as product_number,
         try_cast(sls_cust_id as int) as customer_id,
 
-        -- dates ae stored as YYYYMMDD integer strings e.g '20101229'
+        -- dates are stored as YYYYMMDD integer strings e.g '20101229'
         -- invalid dates (0, negatives, wrong length) are nulled out 
 
-        case 
-            when length(trim(sls_order_dt)) != 8
-                or try_cast(sls_order_dt as int) <= 0
-                then null
-            else try_cast(
-                left(sls_order_dt, 4) || '-' ||
-                substring(sls_order_dt, 5, 2) || '-' ||
-                right(sls_order_dt, 2)
-             as date)
-        end as order_date,
+        {{ convert_date_int('sls_order_dt') }} as order_date,
 
-        case 
-            when length(trim(sls_ship_dt)) != 8
-                or try_cast(sls_ship_dt as int) <= 0
-                then null
-            else try_cast(
-                left(sls_ship_dt, 4) || '-' ||
-                substring(sls_ship_dt, 5, 2) || '-' ||
-                right(sls_ship_dt, 2)
-             as date)
-        end as shipping_date,
+        {{ convert_date_int('sls_ship_dt') }} as shipping_date,
 
-        case 
-            when length(trim(sls_due_dt)) != 8
-                or try_cast(sls_due_dt as int) <= 0
-                then null
-            else try_cast(
-                left(sls_due_dt, 4) || '-' ||
-                substring(sls_due_dt, 5, 2) || '-' ||
-                right(sls_due_dt, 2)
-             as date)
-        end as due_date,
+        {{ convert_date_int('sls_due_dt') }} as due_date,
+        
 
         -- financial fields: cross validate sales, quantity , price
         case 
