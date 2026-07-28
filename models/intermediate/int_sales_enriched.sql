@@ -22,6 +22,7 @@ enriched as (
         price
     from sales
     where order_date is not null
+    and year(order_date) between 2011 and 2013
 )
 
 select * from enriched

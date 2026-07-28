@@ -28,3 +28,7 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+query-comment:
+  comment: "This was run by dbt version {{ dbt_version }} on {{ invocation_time }}"
+  append: true
