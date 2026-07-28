@@ -15,6 +15,9 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+
+on-run-end: "{{ log_dbt_run() }}"
+
 # Materialisation strategy per layer
 models:
   dwh_dbt:
@@ -30,5 +33,7 @@ models:
       +schema: marts
 
 query-comment:
-  comment: "This was run by dbt version {{ dbt_version }} on {{ invocation_time }}"
+  comment: "This was run by dbt version {{ dbt_version }}"
   append: true
+
+
